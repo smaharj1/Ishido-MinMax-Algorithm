@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">Ishido3</string>
+
+    <string name="hello_world">Hello world!</string>
+    <string name="action_settings">Settings</string>
+    <string name="title_activity_main">MainActivity</string>
+    <string name="cointoss">Toss the coin</string>
+    <string name="tossCoin">Toss</string>
+    <string name="cancel">Cancel</string>
+</resources>
