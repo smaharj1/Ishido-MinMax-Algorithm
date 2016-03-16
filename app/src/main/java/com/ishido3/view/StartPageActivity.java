@@ -24,8 +24,10 @@ public class StartPageActivity extends AppCompatActivity {
     public static final String MESSAGE_TURN = "turn";
     public static final String MESSAGE_GAME = "game";
     public static final String MESSAGE_FILENAME = "filename";
-    private final int HUMAN = 1;
-    private final int COMPUTER =0;
+    private final int HEAD = 0;
+    private final int TAIL = 0;
+//    private final int HUMAN = 1;
+//    private final int COMPUTER =0;
 
     private boolean startGame = false;
 
@@ -70,37 +72,106 @@ public class StartPageActivity extends AppCompatActivity {
         return startGame;
     }
 
+    // Plays heads or tail game and checks with users input. If same, then returns true, else false. meaning user lost or won.
+    public boolean headTail(int userInput) {
+        int result = tossCoin();
+        System.out.println("Tossed the coin");
+        if (result == userInput) {
+            return true;
+        }
+        else {
+            return false;
+        }
+    }
+
+
     public void playGame(View view) {
 
 
-        AlertDialog alertDialog = new AlertDialog.Builder(this).create();
-        alertDialog.setTitle("The coin is tossed");
-        alertDialog.setMessage("Alert message to be shown");
-        alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK",
+        final AlertDialog alertDialog = new AlertDialog.Builder(this).create();
+        alertDialog.setTitle("Head or tail choice");
+        alertDialog.setMessage("Please select heads or tails");
+        alertDialog.setButton(AlertDialog.BUTTON_NEGATIVE, "Head",
                 new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int which) {
                         startGame = true;
 
-                        Intent intent = new Intent(getApplicationContext(), MainActivity.class);
-
-                        // Ask for human to do the coin toss for choosing the first player and send the message via extra message
-                        int result = HUMAN;
-
-                        // do the coin toss
-                        result = tossCoin();
-                        System.out.println("Coin tossed is" + result);
-
-                        // Puts into intent as for whose turn it is
-                        intent.putExtra(MESSAGE_TURN, result);
-                        intent.putExtra(MESSAGE_FILENAME, "");
-
-                        // Puts in as new game. So, load it from the raw folder
-                        intent.putExtra(MESSAGE_GAME, "new");
-
                         //dialog.dismiss();
-                        if (startGame) startActivity(intent);
+
+                        AlertDialog newDialog = new AlertDialog.Builder(alertDialog.getContext()).create();
+
+                        int userChoice = HEAD;
+
+                        // Checks if the userChoice and random head/tail are same. If yes, then user won.
+                        if (headTail(userChoice)) {
+
+                            newDialog.setMessage("Congratulations! Head it is. Your turn first!");
+                            newDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK",
+                                    new DialogInterface.OnClickListener(){
+                                        public void onClick(DialogInterface dialogInterface, int whi) {
+                                            Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+                                            intent.putExtra(MESSAGE_TURN, "human");
+                                            intent.putExtra(MESSAGE_GAME, "new");
+                                            startActivity(intent);
+                                        }
+                                    });
+                        }
+                        else {
+                            newDialog.setMessage("Sorry! Tail rolled. Computer goes first");
+                            newDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK",
+                                    new DialogInterface.OnClickListener(){
+                                        public void onClick(DialogInterface dialogInterface, int whi) {
+                                            Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+                                            intent.putExtra(MESSAGE_TURN, "computer");
+                                            intent.putExtra(MESSAGE_GAME, "new");
+                                            startActivity(intent);
+                                        }
+                                    });
+                        }
+
+                        newDialog.show();
+                        //dialog.dismiss();
+
                     }
                 });
+        alertDialog.setButton(AlertDialog.BUTTON_POSITIVE, "Tail",
+                new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int which) {
+                        startGame = true;
+
+                        AlertDialog newDialog = new AlertDialog.Builder(alertDialog.getContext()).create();
+
+                        int userChoice = TAIL;
+
+                        // Checks if the userChoice and random head/tail are same. If yes, then user won.
+                        if (headTail(userChoice)) {
+                            newDialog.setMessage("Congratulations! Tail it is. Your turn first!");
+                            newDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK",
+                                    new DialogInterface.OnClickListener(){
+                                        public void onClick(DialogInterface dialogInterface, int whi) {
+                                            Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+                                            intent.putExtra(MESSAGE_TURN, "human");
+                                            intent.putExtra(MESSAGE_GAME, "new");
+                                            startActivity(intent);
+                                        }
+                                    });
+                        }
+                        else {
+                            newDialog.setMessage("Sorry! Head rolled. Computer goes first");
+                            newDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK",
+                                    new DialogInterface.OnClickListener(){
+                                        public void onClick(DialogInterface dialogInterface, int whi) {
+                                            Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+                                            intent.putExtra(MESSAGE_TURN, "computer");
+                                            intent.putExtra(MESSAGE_GAME, "new");
+                                            startActivity(intent);
+                                        }
+                                    });
+                        }
+                        newDialog.show();
+                    }
+                }
+                );
         alertDialog.show();
 
 
@@ -129,7 +200,7 @@ public class StartPageActivity extends AppCompatActivity {
                     Intent intent = new Intent(getApplicationContext(), MainActivity.class);
 
                     intent.putExtra(MESSAGE_GAME, "load");
-                    intent.putExtra(MESSAGE_TURN, HUMAN);
+                    intent.putExtra(MESSAGE_TURN, "human");
                     intent.putExtra(MESSAGE_FILENAME, filename);
 
                     startActivity(intent);

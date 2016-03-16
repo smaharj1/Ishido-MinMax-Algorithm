@@ -6,6 +6,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
@@ -18,12 +19,11 @@ import com.ishido3.model.Player;
 import com.ishido3.model.TableCoordinates;
 import com.ishido3.model.TileInfo;
 
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
     private final int DEFAULT_COLOR = Color.parseColor("#FCEBB6");
-    private final String NEW_GAME = "new";
-    private final String LOAD_GAME = "load";
     public static final int COMPUTER = 0;
     public static final int HUMAN = 1;
     private FileAccess fileAccess;
@@ -33,6 +33,7 @@ public class MainActivity extends AppCompatActivity {
     private Player computerPlayer = new Player();
     private ArrayList<TileInfo> stock = new ArrayList<TileInfo>();
     private int turn = HUMAN;
+    private int stockIndex =0;
 
 
     @Override
@@ -45,24 +46,43 @@ public class MainActivity extends AppCompatActivity {
 
         // Reads the given file and stores the strings of board data, stock and score
         String gameType = getIntent().getStringExtra(StartPageActivity.MESSAGE_GAME);
-        String file = getIntent().getStringExtra(StartPageActivity.MESSAGE_FILENAME);
-        System.out.println(gameType );
 
-        // Check if the game type is new or needs to be loaded
-        // If it is new, then load the original available grid from raw resource folder
         if (gameType.equals("new")) {
-            System.out.println("Starting the new game");
-            fileAccess.readData(R.raw.newgame,"",FileAccess.RAW);
+            // Get the turn from the head or tail game from user
+            String temp = getIntent().getStringExtra(StartPageActivity.MESSAGE_TURN);
+            if (temp.equals("human")) {
+                turn = HUMAN;
+            }
+            else turn = COMPUTER;
+
+            // populate the stock
+            while (!deck.isDone()) {
+                TileInfo tempTile = new TileInfo();
+                if (deck.generateTile(tempTile)) {
+                    deck.recordTile(tempTile.getNumericColorVal(), tempTile.getNumericSymbolVal());
+                    stock.add(tempTile);
+                }
+            }
+
         }
         else {
-            // do something else to load from the user saved file
-            fileAccess.readData(0,file, FileAccess.FILE);
-            System.out.println("not a new game type");
+            String file = getIntent().getStringExtra(StartPageActivity.MESSAGE_FILENAME);
 
+            fileAccess.readData(0, file, FileAccess.FILE);
+
+            // Fills the board initially with the data retrieved from the file
+            board.fillBoard(fileAccess.getBoardData(), deck);
+
+            // Add to the score model of the player
+            humanPlayer.addScore(fileAccess.getHumanScore());
+            computerPlayer.addScore(fileAccess.getComputerScore());
+
+            // Get the stock from File
+            stock = fileAccess.getStock();
+
+            // Get the turn in the game
+            turn = fileAccess.getNextPlayer();
         }
-
-        // Fills the board initially with the data retrieved from the file
-        board.fillBoard(fileAccess.getBoardData(), deck);
 
         // Makes the table
         makeTable();
@@ -71,19 +91,9 @@ public class MainActivity extends AppCompatActivity {
         TextView humanPlayerView = (TextView) findViewById(R.id.playerScore);
         TextView computerPlayerView = (TextView) findViewById(R.id.computerScore);
 
-        // Add to the score model of the player
-        humanPlayer.addScore(fileAccess.getHumanScore());
-        computerPlayer.addScore(fileAccess.getComputerScore());
-
         // Set the text in the view for the scores
         humanPlayerView.setText("" + humanPlayer.getScore());
         computerPlayerView.setText(""+computerPlayer.getScore());
-
-        // Get the stock from File
-        stock = fileAccess.getStock();
-
-        // Get the turn in the game
-        turn = fileAccess.getNextPlayer();
 
     }
 
@@ -168,6 +178,14 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
+    // Saves the game into a file. Basically calls the function in the fileAccess
+    public void saveGame(View v) {
+        try {
+            fileAccess.save(board, stock, stockIndex, humanPlayer,computerPlayer,turn);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+    }
 
 
     @Override

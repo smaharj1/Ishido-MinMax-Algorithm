@@ -1,10 +1,14 @@
 package com.ishido3.model;
 
 import android.content.Context;
+import android.os.Environment;
 
 import com.ishido3.view.MainActivity;
 
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -177,5 +181,77 @@ public class FileAccess {
     public int getComputerScore() { return computer_score; }
 
     public int getNextPlayer() { return next_player; }
+
+    private int convertTile (TileInfo tile) {
+        return ((tile.getNumericColorVal()+1) *10) + (tile.getNumericSymbolVal()+1);
+    }
+
+    public void save(Board board, ArrayList<TileInfo> stock, int stockIndex, Player humanPlayer, Player computerPlayer, int turn) throws FileNotFoundException {
+        File file = new File(Environment.getExternalStorageDirectory(),"savedGame.txt");
+
+        if (file.exists()) file.delete();
+        FileOutputStream outStream = new FileOutputStream(file);
+
+        try {
+            outStream.write("Layout:\n".getBytes());
+            // Save everything locally first for easiness
+            for (int rowIndex = 0; rowIndex < 8; ++rowIndex) {
+                String temp = "";
+                for (int colIndex = 0; colIndex < 12; ++colIndex) {
+                    TileInfo tileInfo = board.getTile(rowIndex, colIndex);
+                    if (tileInfo != null) {
+                        int convertedTile = convertTile(tileInfo);
+                        temp = temp + Integer.toString(convertedTile) + " ";
+                    } else {
+                        temp = temp + "00 ";
+                    }
+                }
+                temp += "\n";
+                outStream.write(temp.getBytes());
+            }
+
+            outStream.write("\n".getBytes());
+            outStream.write("Stock:".getBytes());
+
+            stockString = "";
+            for (int index =stockIndex; index < stock.size(); ++index) {
+                int convertedTile = convertTile(stock.get(index));
+                stockString += Integer.toString(convertedTile)+ " ";
+            }
+
+            outStream.write(stockString.getBytes());
+            outStream.write("\n".getBytes());
+            outStream.write("\n".getBytes());
+
+            outStream.write("Human Score: \n".getBytes());
+            outStream.write(Integer.toString(humanPlayer.getScore()).getBytes());
+
+            outStream.write("\n".getBytes());
+            outStream.write("\n".getBytes());
+            outStream.write("Computer Score: \n".getBytes());
+            outStream.write(Integer.toString(computerPlayer.getScore()).getBytes());
+            outStream.write("\n".getBytes());
+            outStream.write("\n".getBytes());
+
+            outStream.write("Next Player:\n".getBytes());
+            if (turn == MainActivity.HUMAN) {
+                outStream.write("Human".getBytes());
+            }
+            else {
+                outStream.write("Computer".getBytes());
+            }
+        } catch (Exception e) {
+
+        }
+
+
+
+
+
+
+
+
+
+    }
 }
 
