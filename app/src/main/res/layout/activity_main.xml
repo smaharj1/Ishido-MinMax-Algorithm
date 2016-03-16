@@ -47,10 +47,21 @@
         android:layout_height="wrap_content"
         android:textAppearance="?android:attr/textAppearanceLarge"
         android:id="@+id/resultSymbol"
-        android:visibility="invisible"
+        android:visibility="visible"
         android:layout_gravity="center_horizontal"
         android:layout_marginTop="10dp"
-        android:layout_marginBottom="10dp" />
+        android:layout_marginBottom="10dp"
+        android:height="70dp"
+        android:width="70dp"
+        android:gravity="center_vertical|center_horizontal" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Peek Next"
+        android:id="@+id/button2"
+        android:layout_gravity="center_horizontal"
+        android:onClick="getNext" />
 
     <Button
         android:layout_width="wrap_content"

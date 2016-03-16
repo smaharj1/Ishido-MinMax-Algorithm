@@ -11,13 +11,9 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
-import android.widget.Toast;
 
 import com.ishido3.R;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.Random;
 
 public class StartPageActivity extends AppCompatActivity {
@@ -191,26 +187,14 @@ public class StartPageActivity extends AppCompatActivity {
                 EditText file = (EditText) d.findViewById(R.id.filename);
                 String filename = file.getText().toString();
 
-                try {
 
-                    InputStream in = openFileInput(filename+".txt");
+                Intent intent = new Intent(getApplicationContext(), MainActivity.class);
 
-                    in.close();
+                intent.putExtra(MESSAGE_GAME, "load");
 
-                    Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+                intent.putExtra(MESSAGE_FILENAME, filename);
 
-                    intent.putExtra(MESSAGE_GAME, "load");
-                    intent.putExtra(MESSAGE_TURN, "human");
-                    intent.putExtra(MESSAGE_FILENAME, filename);
-
-                    startActivity(intent);
-
-                } catch (FileNotFoundException e) {
-                    Toast.makeText(getApplicationContext(), "The file you specified is not found", Toast.LENGTH_SHORT).show();
-                    e.printStackTrace();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+                startActivity(intent);
 
 
             }

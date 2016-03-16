@@ -10,6 +10,7 @@ import android.view.View;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.ishido3.R;
 import com.ishido3.model.Board;
@@ -24,6 +25,7 @@ import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
     private final int DEFAULT_COLOR = Color.parseColor("#FCEBB6");
+    private final String MESSAGE = "score";
     public static final int COMPUTER = 0;
     public static final int HUMAN = 1;
     private FileAccess fileAccess;
@@ -33,8 +35,9 @@ public class MainActivity extends AppCompatActivity {
     private Player computerPlayer = new Player();
     private ArrayList<TileInfo> stock = new ArrayList<TileInfo>();
     private int turn = HUMAN;
-    private int stockIndex =0;
 
+    private int stockIndex =0;
+    private int nextIndex =0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -68,7 +71,7 @@ public class MainActivity extends AppCompatActivity {
         else {
             String file = getIntent().getStringExtra(StartPageActivity.MESSAGE_FILENAME);
 
-            fileAccess.readData(0, file, FileAccess.FILE);
+            fileAccess.readData(file);
 
             // Fills the board initially with the data retrieved from the file
             board.fillBoard(fileAccess.getBoardData(), deck);
@@ -95,7 +98,89 @@ public class MainActivity extends AppCompatActivity {
         humanPlayerView.setText("" + humanPlayer.getScore());
         computerPlayerView.setText(""+computerPlayer.getScore());
 
+        // Gives the user what the current tile is
+        updateTileView();
     }
+
+    // Updates the current tile to be placed
+    public void updateTileView() {
+        TextView cTileSymbol = (TextView) findViewById(R.id.resultSymbol);
+        cTileSymbol.setText(stock.get(stockIndex).getSymbol());
+        cTileSymbol.setBackgroundColor(stock.get(stockIndex).getColor());
+        nextIndex = stockIndex;
+    }
+
+    /**
+     * Handles the onClickListener for the game board and performs the operation such as updating the table, player score, game deck
+     */
+	public View.OnClickListener calculatePosition = new View.OnClickListener() {
+		public void onClick(View v) {
+            // Retrieves the position (row/column numbers) for the clicked cell in the table
+            TableCoordinates clickPosition = (TableCoordinates) v.getTag();
+
+            if (turn == HUMAN) {
+                if (board.isTileAvailable(clickPosition.getRow(), clickPosition.getColumn())) {
+                    // Now, if the tile is available, try to fill it with the tile in the stock for human
+                    if (board.canFillTile(clickPosition.getRow(), clickPosition.getColumn(), stock.get(stockIndex))) {
+                        // Temporarily stores the values so that we don't have to repeat same thing over and over
+                        TileInfo tempTile = stock.get(stockIndex);
+
+                        TextView box = (TextView) v;
+                        box.setText(tempTile.getSymbol());
+                        box.setBackgroundColor(tempTile.getColor());
+
+                        // Records the generated/selected tile in the deck so that there is more more than 2 repetitions of certain combination
+                        deck.recordTile(tempTile.getNumericColorVal(), tempTile.getNumericSymbolVal());
+                        board.fillTile(clickPosition.getRow(),clickPosition.getColumn(), tempTile);
+
+                        // Generates and adds the score of the player
+                        humanPlayer.addScore(board.calculateScore(clickPosition.getRow(), clickPosition.getColumn(), tempTile));
+
+                        // Prints and updates the player score
+                        TextView playerScore = (TextView) findViewById(R.id.playerScore);
+                        playerScore.setText("" + humanPlayer.getScore());
+
+                        // Now change the turn
+                        turn = COMPUTER;
+
+                        // Increase the stock index for next user
+                        stockIndex++;
+
+                        // Updates the view of the tile
+                        updateTileView();
+                    } else {
+                        Toast.makeText(getApplicationContext(), "Illegal move", Toast.LENGTH_SHORT).show();
+                    }
+                } else {
+                    Toast.makeText(getApplicationContext(), "The position is already filled", Toast.LENGTH_LONG).show();
+                }
+            }
+            else {
+                Toast.makeText(getApplicationContext(), "Slow down! not your turn.. GOSH!!!", Toast.LENGTH_SHORT).show();
+            }
+        }
+	};
+
+
+    // Saves the game into a file. Basically calls the function in the fileAccess
+    public void saveGame(View v) {
+        try {
+            fileAccess.save(board, stock, stockIndex, humanPlayer,computerPlayer,turn);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+
+        this.finish();
+    }
+
+    // Gets the next tile view for the purpose of view only
+    public void getNext(View view) {
+        nextIndex = nextIndex+1;
+        TextView cTileSymbol = (TextView) findViewById(R.id.resultSymbol);
+        cTileSymbol.setText(stock.get(nextIndex).getSymbol());
+        cTileSymbol.setBackgroundColor(stock.get(nextIndex).getColor());
+    }
+
 
     /**
      * Makes the table in the board
@@ -132,7 +217,7 @@ public class MainActivity extends AppCompatActivity {
                 TableCoordinates tableCoordinates = new TableCoordinates(rowIndex, columnIndex);
                 columns.setTag(tableCoordinates);
 
-                //columns.setOnClickListener(calculatePosition);
+                columns.setOnClickListener(calculatePosition);
                 row.addView(columns, params);
             }
             table.addView(row);
@@ -178,14 +263,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    // Saves the game into a file. Basically calls the function in the fileAccess
-    public void saveGame(View v) {
-        try {
-            fileAccess.save(board, stock, stockIndex, humanPlayer,computerPlayer,turn);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-    }
+
 
 
     @Override
