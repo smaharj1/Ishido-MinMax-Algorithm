@@ -7,6 +7,10 @@ import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.animation.AlphaAnimation;
+import android.view.animation.Animation;
+import android.widget.CheckBox;
+import android.widget.EditText;
 import android.widget.TableLayout;
 import android.widget.TableRow;
 import android.widget.TextView;
@@ -19,6 +23,7 @@ import com.ishido3.model.FileAccess;
 import com.ishido3.model.Player;
 import com.ishido3.model.TableCoordinates;
 import com.ishido3.model.TileInfo;
+import com.ishido3.model.TileNode;
 
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
@@ -38,6 +43,8 @@ public class MainActivity extends AppCompatActivity {
 
     private int stockIndex =0;
     private int nextIndex =0;
+
+    private Animation anim;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -100,6 +107,13 @@ public class MainActivity extends AppCompatActivity {
 
         // Gives the user what the current tile is
         updateTileView();
+
+        // Helps blink the tile
+        anim = new AlphaAnimation(0.0f, 1.0f);
+        anim.setDuration(50); //You can manage the blinking time with this parameter
+        anim.setStartOffset(20);
+        anim.setRepeatMode(Animation.REVERSE);
+        anim.setRepeatCount(Animation.INFINITE);
     }
 
     // Updates the current tile to be placed
@@ -160,6 +174,86 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 	};
+
+
+    // This is for computer's turn. When this button is clicked, then the algorithm runs to bring out the best node for the PC
+    public void playComputer(View view) {
+        EditText plyView = (EditText) findViewById(R.id.cutoffVal);
+        String tempValue = (plyView.getText().toString());
+
+        CheckBox isAB = (CheckBox) findViewById(R.id.alphabeta);
+        if (isAB.isChecked()) {
+            board.enableGodMode();
+        }
+        else {
+            board.disableGodMode();
+        }
+
+        int cutOffValue =0;
+        if (!tempValue.isEmpty()) {
+            cutOffValue = Integer.parseInt(tempValue);
+        }
+
+        // Starts the algorithm
+        long startTime = System.currentTimeMillis();
+        TileNode answerNode = board.startAlgorithm(stock, stockIndex, humanPlayer.getScore(), computerPlayer.getScore(), cutOffValue);
+        long endTime = System.currentTimeMillis();
+        Toast.makeText(getApplicationContext(), "" + (endTime - startTime),Toast.LENGTH_SHORT).show();
+        System.out.println("" + (endTime-startTime));
+
+        if (answerNode == null) {
+            Toast.makeText(getApplicationContext(),"Game over",Toast.LENGTH_SHORT).show();
+            return;
+        }
+        System.out.println("The answer is " + answerNode.getCoordinates().getRow()+ "   " + answerNode.getCoordinates().getColumn());
+        System.out.println("Heuristic is " + answerNode.getHeuristicVal());
+
+        // After the TileNode is got from the algorithm, calculate the score according to the result and place it on the board.
+        // For now, it is solely computer for algorithm
+        int tempScore = board.calculateScore(answerNode.getCoordinates().getRow(), answerNode.getCoordinates().getColumn(), answerNode.getTile());
+        computerPlayer.addScore(tempScore);
+
+        TextView CPView = (TextView) findViewById(R.id.computerScore);
+
+        CPView.setText(""+computerPlayer.getScore());
+
+        TextView box = (TextView) findViewInTable(answerNode.getCoordinates());
+        box.setText(answerNode.getTile().getSymbol());
+        box.setBackgroundColor(answerNode.getTile().getColor());
+
+        box.startAnimation(anim);
+        // Now put it on the board
+        board.fillTile(answerNode.getCoordinates().getRow(),answerNode.getCoordinates().getColumn(),answerNode.getTile());
+
+        turn = HUMAN;
+        stockIndex++;
+        updateTileView();
+    }
+
+    /**
+     * Finds the cell view in the TableLayout since it cannot be directly found
+     *
+     * @param inputCoordinates It is the given coordinates for the cell
+     * @return
+     */
+    private TextView findViewInTable(TableCoordinates inputCoordinates) {
+        TableLayout tableLayout = (TableLayout) findViewById(R.id.givenGrid);
+
+        // Loops through each cell view and checks if it matches with the coordinates with the view tag
+        for (int rows = 0; rows < tableLayout.getChildCount(); ++rows) {
+            TableRow tableRow = (TableRow) tableLayout.getChildAt(rows);
+
+            for (int col = 0; col < tableRow.getChildCount(); ++col) {
+                TextView box = (TextView) tableRow.getChildAt(col);
+                TableCoordinates boxCoordinates = (TableCoordinates) box.getTag();
+                if (boxCoordinates.getRow() == inputCoordinates.getRow() && boxCoordinates.getColumn() == inputCoordinates.getColumn()) {
+                    return box;
+                }
+            }
+        }
+        return null;
+
+    }
 
 
     // Saves the game into a file. Basically calls the function in the fileAccess

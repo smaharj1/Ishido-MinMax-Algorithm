@@ -109,10 +109,12 @@ public class FileAccess {
             }
             else if (lineSplit[index].contains(HUMAN_SCORE_START)) {
                 index++;
+                lineSplit[index] = lineSplit[index].replaceAll("\\D","");
                 human_score =Integer.parseInt(lineSplit[index]);
             }
             else if (lineSplit[index].contains(COMPUTER_SCORE_START)) {
                 index++;
+                lineSplit[index] = lineSplit[index].replaceAll("\\D", "");
                 computer_score = Integer.parseInt(lineSplit[index]);
             }
             else if(lineSplit[index].contains(NEXT_PLAYER)) {
@@ -137,7 +139,9 @@ public class FileAccess {
         }
         for (int index = 0; index < stockStr.length; index++) {
             // Adds the TileInfo to the arraylist of stock
+            System.out.println(""+ stockStr[index]);
             if (!stockStr[index].isEmpty()) {
+                stockStr[index] = stockStr[index].replaceAll("\\D+","");
                 TileInfo tmp = Board.calculateTile(Integer.parseInt(stockStr[index]));
                 stock.add(tmp);
             }
