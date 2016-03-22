@@ -1,3 +1,9 @@
+/************************************************************
+ * Name:  Sujil Maharjan                                    *
+ * Project:  Project 3/Ishido Game			               *
+ * Class:  Artificial Intelligence/CMP 331                  *
+ * Date:  3/22/2016			                               *
+ ************************************************************/
 package com.ishido3.view;
 
 import android.graphics.Color;
@@ -29,23 +35,37 @@ import java.io.FileNotFoundException;
 import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
+    // Initiates the default color for the boxes of the table (table cells)
     private final int DEFAULT_COLOR = Color.parseColor("#FCEBB6");
-    private final String MESSAGE = "score";
+
+    // Initialies the values for human and computer
     public static final int COMPUTER = 0;
     public static final int HUMAN = 1;
+
+    // Declares the file access, board, deck, humanPlayer, computerPlayer since we have two players in the game this time
     private FileAccess fileAccess;
     private Board board= new Board();
     private Deck deck = new Deck();
     private Player humanPlayer = new Player();
     private Player computerPlayer = new Player();
+
+    // Holds the value of the stock as an array list
     private ArrayList<TileInfo> stock = new ArrayList<TileInfo>();
+
+    // Initializes the turn in the game as of human's turn
     private int turn = HUMAN;
+
+    // Initializes the hint pressed as false and also same for human enabled
     private boolean hintPressed = false;
     private boolean humanEnabled = false;
 
+    // Initializes the stock index and next index
     private int stockIndex =0;
+
+    // Initializes the next index value. This is solely for the purpose of allowing the user to check the next tiles in the stock
     private int nextIndex =0;
 
+    // Declares the animation and tracking the animated box in the table
     private TextView animatedBox = null;
     private Animation anim;
 
@@ -60,15 +80,18 @@ public class MainActivity extends AppCompatActivity {
         // Reads the given file and stores the strings of board data, stock and score
         String gameType = getIntent().getStringExtra(StartPageActivity.MESSAGE_GAME);
 
+        // Checks if the game is the new game of the load game. If new game, then check whose turn we have from the coin toss
         if (gameType.equals("new")) {
             // Get the turn from the head or tail game from user
             String temp = getIntent().getStringExtra(StartPageActivity.MESSAGE_TURN);
+
+            // Set the turn according to what we got from the coin toss
             if (temp.equals("human")) {
                 turn = HUMAN;
             }
             else turn = COMPUTER;
 
-            // populate the stock
+            // Automatically generate the stock and store it in the stock arraylist
             while (!deck.isDone()) {
                 TileInfo tempTile = new TileInfo();
                 if (deck.generateTile(tempTile)) {
@@ -77,9 +100,12 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         }
+        // At this point, we have the load game
         else {
+            // Get the name of the file that user wants to open
             String file = getIntent().getStringExtra(StartPageActivity.MESSAGE_FILENAME);
 
+            // Read the data in the file. Parse it and update all of its constituent values
             fileAccess.readData(file);
 
             // Fills the board initially with the data retrieved from the file
@@ -118,7 +144,9 @@ public class MainActivity extends AppCompatActivity {
         anim.setRepeatCount(Animation.INFINITE);
     }
 
-    // Updates the current tile to be placed
+    /**
+     * Updates the current tile to be placed
+     */
     public void updateTileView() {
         TextView cTileSymbol = (TextView) findViewById(R.id.resultSymbol);
         cTileSymbol.setText(stock.get(stockIndex).getSymbol());
@@ -134,6 +162,7 @@ public class MainActivity extends AppCompatActivity {
             // Retrieves the position (row/column numbers) for the clicked cell in the table
             TableCoordinates clickPosition = (TableCoordinates) v.getTag();
 
+            // Checks if it is human's turn. It only performs the operation if it is human's turn. Human cannot place any tiles if it is not human's turn
             if (turn == HUMAN) {
                 if (board.isTileAvailable(clickPosition.getRow(), clickPosition.getColumn())) {
                     // Now, if the tile is available, try to fill it with the tile in the stock for human
@@ -141,16 +170,19 @@ public class MainActivity extends AppCompatActivity {
                         // Temporarily stores the values so that we don't have to repeat same thing over and over
                         TileInfo tempTile = stock.get(stockIndex);
 
+                        // Clears the animation in the table if there are any
                         if (animatedBox != null) {
                             animatedBox.clearAnimation();
                         }
 
+                        // If human places the tile then remove the blinking tile got from the hint
                         if (humanEnabled) {
                             animatedBox.setText("");
                             animatedBox.setBackgroundColor(DEFAULT_COLOR);
                             humanEnabled = false;
                         }
 
+                        // Prints the tile in the box on the table
                         TextView box = (TextView) v;
                         box.setText(tempTile.getSymbol());
                         box.setBackgroundColor(tempTile.getColor());
@@ -188,9 +220,16 @@ public class MainActivity extends AppCompatActivity {
         }
 	};
 
+    /**
+     * Computes if hint button is pressed by the user
+     * @param view
+     */
     public void hint(View view) {
+        // Checks if it is human's turn. Hint can only be pressed if it is human's turn
         if (turn == HUMAN) {
             hintPressed = true;
+
+            // Play the game
             playComputer(view);
             hintPressed = false;
         }
@@ -199,19 +238,26 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    // This is for computer's turn. When this button is clicked, then the algorithm runs to bring out the best node for the PC
+    /**
+     * This is for computer's turn. When this button is clicked, then the algorithm runs to bring out the best node for the PC
+     * @param view
+     */
     public void playComputer(View view) {
         if (animatedBox != null) {
             animatedBox.clearAnimation();
         }
 
+        // If it is human's turn and hint has not been pressed, then don't run this function
         if(turn == HUMAN && hintPressed == false) {
             Toast.makeText(getApplicationContext(), "It is your turn, not computer's.", Toast.LENGTH_SHORT).show();
             return;
         }
+
+        // Get the cutoff value
         EditText plyView = (EditText) findViewById(R.id.cutoffVal);
         String tempValue = (plyView.getText().toString());
 
+        // Calculate the alphabeta check box. If check box is checked, then enable the alpha-beta pruning algorithm
         CheckBox isAB = (CheckBox) findViewById(R.id.alphabeta);
         if (isAB.isChecked()) {
             board.enableGodMode();
@@ -220,12 +266,13 @@ public class MainActivity extends AppCompatActivity {
             board.disableGodMode();
         }
 
+        // Sets the cut off value
         int cutOffValue =0;
         if (!tempValue.isEmpty()) {
             cutOffValue = Integer.parseInt(tempValue);
         }
 
-        // Starts the algorithm
+        // Computes the start time in milliseconds
         long startTime = System.currentTimeMillis();
 
         // Checks if the algorithm should be run as human or computer. If human, then pass the value to board.
@@ -236,12 +283,16 @@ public class MainActivity extends AppCompatActivity {
             board.setHumanUsingAlgo(false);
         }
 
+        // At this point, start the algorithm by calling the funciton in the board
         TileNode answerNode = board.startAlgorithm(stock, stockIndex, humanPlayer.getScore(), computerPlayer.getScore(), cutOffValue);
 
+        // Conputes the end time so that we can get the total time taken by the computer to compute the algorithm
         long endTime = System.currentTimeMillis();
+
         Toast.makeText(getApplicationContext(), "" + (endTime - startTime),Toast.LENGTH_SHORT).show();
         System.out.println("" + (endTime-startTime));
 
+        // If answer node is null, it means that the game is over. So, just display that message
         if (answerNode.getCoordinates() == null) {
             Toast.makeText(getApplicationContext(),"Game over",Toast.LENGTH_SHORT).show();
             return;
@@ -267,6 +318,7 @@ public class MainActivity extends AppCompatActivity {
         box.startAnimation(anim);
         animatedBox = box;
 
+        // Update the values according to who played this algorithm: human or computer
         if (turn != HUMAN) {
             // Now put it on the board
             board.fillTile(answerNode.getCoordinates().getRow(), answerNode.getCoordinates().getColumn(), answerNode.getTile());
@@ -277,8 +329,7 @@ public class MainActivity extends AppCompatActivity {
             humanEnabled = true;
         }
 
-
-
+        // Update the tile view
         updateTileView();
     }
 
@@ -307,9 +358,12 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-
-    // Saves the game into a file. Basically calls the function in the fileAccess
+    /**
+     * Saves the game into a file. Basically calls the function in the fileAccess
+     * @param v
+     */
     public void saveGame(View v) {
+        // Save the game if save button is pressed
         try {
             fileAccess.save(board, stock, stockIndex, humanPlayer,computerPlayer,turn);
         } catch (FileNotFoundException e) {
@@ -319,7 +373,10 @@ public class MainActivity extends AppCompatActivity {
         this.finish();
     }
 
-    // Gets the next tile view for the purpose of view only
+    /**
+     * Gets the next tile view for the purpose of view only
+     * @param view
+     */
     public void getNext(View view) {
         nextIndex = nextIndex+1;
         TextView cTileSymbol = (TextView) findViewById(R.id.resultSymbol);

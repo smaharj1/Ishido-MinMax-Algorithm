@@ -1,8 +1,8 @@
 /************************************************************
  * Name:  Sujil Maharjan                                    *
- * Project:  Project 2/Ishido Game			               *
+ * Project:  Project 3/Ishido Game			               *
  * Class:  Artificial Intelligence/CMP 331                  *
- * Date:  2/23/2016			                               *
+ * Date:  3/22/2016			                               *
  ************************************************************/
 
 package com.ishido3.model;
@@ -10,7 +10,7 @@ package com.ishido3.model;
 import java.util.ArrayList;
 
 /**
- * Holds the game board and updates the board
+ * Holds the game board and updates the board along with the algorithm min max
  * Created by Tsujil on 1/26/2016.
  */
 public class Board implements Cloneable{
@@ -20,11 +20,16 @@ public class Board implements Cloneable{
     // Total number of columns in the board
     public static final int TOTAL_COLUMNS = 12;
 
+    // Locally holds the stock so that we don't need to access other classes
     private ArrayList<TileInfo> stock = new ArrayList<TileInfo>();
+
+    // Holds the index of the stock locally
     private int stockIndex = 0;
 
+    // Holds the boolean value of whether alpha beta pruning is enabled or not
     private boolean isGodMode = false;
 
+    // Holds the boolean value of whether human is using the algorithm or the computer
     private boolean isHumanUsingAlgo = false;
 
     // Two dimensional array of tiles with their respective information
@@ -41,38 +46,62 @@ public class Board implements Cloneable{
         }
     }
 
+    /**
+     * Enables the Alpha-beta pruning in the min max algorithm
+     */
     public void enableGodMode() {
         isGodMode = true;
     }
 
+    /**
+     * Disables the Alpha-beta pruning in the min max algorithm
+     */
     public void disableGodMode() {
         isGodMode = false;
     }
+
     /**
-     * This is called by the activity to start performing the heuristic of min max
+     * Initiates the min max algorithm.
+     * @param stock Holds the whole stock
+     * @param sIndex Holds the index of the stock where we are getting the tiles from
+     * @param humanScore Holds the total score of human at that point
+     * @param computerScore Holds the total score of computer until the point
+     * @param cutoff Holds the cutoff value of the whole algorithm
+     * @return Returns the TileNode object that holds the tile information and the location the tile should be placed along with its heuristic value
      */
     public TileNode startAlgorithm(ArrayList<TileInfo> stock, int sIndex, int humanScore, int computerScore, int cutoff) {
+        // Stores the value of stock and the index locally so that the algorithm runs faster
         this.stock = stock;
         stockIndex = sIndex;
 
         // The tile held would be null and coordinates to start with would be 0,0
         TileNode arbitraryNode = new TileNode(null,new TableCoordinates(-1,-1),Integer.MIN_VALUE);
 
+        // Returns the final answer from here
         return performMinMax(arbitraryNode, false, true, cutoff, humanScore, computerScore,Integer.MIN_VALUE,Integer.MAX_VALUE);
     }
 
+    /**
+     * Checks if the current tile is the terminal node tile. It does this by checking if there exists any other available location if the current tile is placed on the board
+     * @param currentNode Holds the value of current node (tile)
+     * @param index Holds the index of the tile after current node
+     * @return Returns true if there are no locations available after the current tile i.e. current node is the terminal node
+     */
     public boolean isNextTileLocNull(TileNode currentNode, int index) {
+        // Initializes the answer to false i.e. next location exists
         boolean answer = false;
-        // fill the current tile into the board
 
+        // Checks if the current node is the start node in which case the coordinates will be null.
+        // Return false if this is the first time we are running the algorithm
         if (currentNode.getCoordinates().getColumn() == -1) return false;
 
-        //System.out.println(currentNode.getTile().getSymbol() + "     " + stock.get(index).getSymbol());
-
         // check for next tile's location. Index already points to the next tile to currentNode
+        // Checks if the stockIndex already points to the maximum size of the stock in which case we are out of the tiles in stock
         if (stockIndex == stock.size()) {
             return true;
         }
+
+        // Finally if none of the conditions above are true, check if the current node has any children
         TileNode newTile = new TileNode(stock.get(index), new TableCoordinates(-1,-1),0);
 
         // Checks if the location exists. It means that there is no location available for this tile
@@ -80,22 +109,37 @@ public class Board implements Cloneable{
             answer = true;
         }
 
+        // Returns the answer
         return answer;
     }
 
+    /**
+     * Sets that the human is using hint function to get the answer
+     * @param val Holds true if the human pressed hint for getting to the answer
+     */
     public void setHumanUsingAlgo(boolean val) {
         isHumanUsingAlgo = val;
     }
 
     /**
      * This is the main min max algorithm function that is used for the computer's case more often
+     * @param originNode This holds the root node for the algorithm
+     * @param isMaximizer Holds if the current node we are looking at is a maximizer or minimizer
+     * @param isComputer Holds if it is computer's turn
+     * @param cutoffVal Holds the current cutoff value
+     * @param humanScore Holds the current score of human
+     * @param computerScore Holds the current score of computer
+     * @param alphaH Holds the alpha heuristic value
+     * @param betaH Holds the beta heuristic value
+     * @return Returns the best TileNode according to the comparison of the heuristic
      */
-
     public TileNode performMinMax(TileNode originNode, boolean isMaximizer, boolean isComputer, int cutoffVal, int humanScore, int computerScore, int alphaH, int betaH) {
-        // This means that it is the last node. So, it calculates the heuristic of the node
+        // Checks if this is the terminal or leaf node. If yes, then computes the heuristic value
         if (cutoffVal ==0 || isNextTileLocNull(originNode, stockIndex) == true) {
-
+            // Initializes the heuristic value to 0
             int heuristicVal=0;
+
+            // Checks if this is human getting the HINT. If yes, then heuristic would be human - computer
             if (isHumanUsingAlgo) {
                 heuristicVal = humanScore - computerScore;
             }
@@ -103,20 +147,33 @@ public class Board implements Cloneable{
                 heuristicVal = computerScore - humanScore;
             }
 
+            // Returns the node with calculated heuristic
             return new TileNode (originNode.getTile(),originNode.getCoordinates(),heuristicVal);
         }
 
+        // Checks if this node is maximizer or minimizer and calculates likewise
         if (isMaximizer) {
+            // Gets the tile from stock index
             TileInfo tempInfo = stock.get(stockIndex);
-            //System.out.println("MAXIMIER WINDOW:::: working for stock index "+ stockIndex);
+
+            // Increases the index
             stockIndex++;
+
+            // Initializes the tempNode for first time use
             TileNode tempNode = new TileNode(tempInfo, new TableCoordinates(-1,-1), Integer.MIN_VALUE);
 
+            // Gets the first node location for the given tempNode
             TileNode childNode = findNextAvailableTileNode(tempNode);
+
+            // Initializes the best choice to have the minimum heuristic value in the beginning
             TileNode bestChoice = new TileNode(null, null, Integer.MIN_VALUE);
+
+            // Loop until we go through each child node location on the board and update bestChoice on the way
             while (childNode != null) {
-                //System.out.println("Child node has "+ childNode.getCoordinates().getRow() + "   " + childNode.getCoordinates().getColumn());
+                // Computes the score of the current tile on the given location
                 int tempScore = calculateScore(childNode.getCoordinates().getRow(), childNode.getCoordinates().getColumn(), childNode.getTile());
+
+                // If its computer's turn, update computer's score. Else, update human's score
                 if (isComputer) {
                     computerScore += tempScore;
                 }
@@ -124,32 +181,37 @@ public class Board implements Cloneable{
                     humanScore += tempScore;
                 }
 
+                // Updates the turn in the game
                 isComputer = !isComputer;
 
                 // Fill the tile on the board and perform min max with new node that is increased in stock
                 fillTile(childNode.getCoordinates().getRow(), childNode.getCoordinates().getColumn(), childNode.getTile());
 
+                // Recursively calls the performMinMax function with maxmin boolean value swapped and cutoff decreased.
                 TileNode algoNode = performMinMax(childNode,false, isComputer, cutoffVal-1, humanScore, computerScore, alphaH, betaH);
 
-                //System.out.println("Heuristic for this is " + algoNode.getHeuristicVal());
+                // Removes the tile from the board since the another child we will compute will also be for the same tile
                 removeTile(childNode.getCoordinates().getRow(), childNode.getCoordinates().getColumn());
 
+                // If the algorithm's node has greater heuristic value, then update best choice to the current child
                 if (algoNode.getHeuristicVal() > bestChoice.getHeuristicVal()) {
 
-                    //System.out.println("Better node found! It is " + algoNode.getHeuristicVal() + "  PREVIOUS HEURISTIC: " + bestChoice.getHeuristicVal() + " for stock index " + (stockIndex - 1) + "    " + childNode.getCoordinates().getRow() + "  " + childNode.getCoordinates().getColumn());
                     childNode.setHeuristicVal(algoNode.getHeuristicVal());
                     bestChoice = childNode;
                 }
 
+                // Checks if Alpha-beta pruning is enabled. If yes, then computes the score likewise
                 if (isGodMode) {
                     if (bestChoice.getHeuristicVal() > alphaH)
                         alphaH = bestChoice.getHeuristicVal();
 
+                    // If alpha is greater than beta heuristic, then we can break from the loop
                     if (betaH <= alphaH) {
-                        //System.out.println("Alpha beta called at index " + (stockIndex - 1) + " from MAX");
                         break;
                     }
                 }
+
+                // Swap the turn back to previous to decrease the scores since we will be dealing with the same tile in this loop
                 isComputer = !isComputer;
 
                 if (isComputer) {
@@ -159,29 +221,41 @@ public class Board implements Cloneable{
                     humanScore -= tempScore;
                 }
 
-                //System.out.println("This is MAXIMIZER " + stockIndex + " and its heuristic is " + childNode.getHeuristicVal());
+                // Find the next available location of this tile
                 childNode = findNextAvailableTileNode(childNode);
             }
-            stockIndex--;
-            //System.out.println("The best choice has heuristic " + bestChoice.getHeuristicVal());
-            return bestChoice;
 
+            // Decrement the stock index
+            stockIndex--;
+
+            // Returns the best choice at this point
+            return bestChoice;
         }
         else {
+            // Computes the minimizer
             TileInfo tempInfo = stock.get(stockIndex);
-            //System.out.println("MAXIMIER WINDOW:::: working for stock index "+ stockIndex);
+
+            // Increases the stock index
             stockIndex++;
+
+            // Initialize the temporary node to have the maximum value for the beginning
             TileNode tempNode = new TileNode(tempInfo, new TableCoordinates(-1,-1), Integer.MAX_VALUE);
 
             TileNode childNode = findNextAvailableTileNode(tempNode);
             TileNode bestChoice;
+
+            // If the origin node is null, it means that this is the first tile running the whole algorithm
+            // So, treat this as maximizer for ONE TIME ONLY since we will need the maximum heuristic from computer's available locations
             if (originNode.getTile() == null) {
                 bestChoice = new TileNode(null, null, Integer.MIN_VALUE);
             }
             else {
                 bestChoice = new TileNode(null, null, Integer.MAX_VALUE);
             }
+
+            // Loops through until the child node is null
             while (childNode != null) {
+                // Calculates the score for current use and updates it
                 int tempScore = calculateScore(childNode.getCoordinates().getRow(), childNode.getCoordinates().getColumn(), childNode.getTile());
                 if (isComputer) {
                     computerScore += tempScore;
@@ -195,14 +269,15 @@ public class Board implements Cloneable{
                 // Fill the tile on the board and perform min max with new node that is increased in stock
                 fillTile(childNode.getCoordinates().getRow(), childNode.getCoordinates().getColumn(), childNode.getTile());
 
+                // Runs the recursive function to perform min-max
                 TileNode algoNode = performMinMax(childNode,true, isComputer, cutoffVal-1, humanScore, computerScore, alphaH, betaH);
 
+                // Removes the tile from the board
                 removeTile(childNode.getCoordinates().getRow(), childNode.getCoordinates().getColumn());
 
+                // If the origin node is null, treat this as the maximizer
                 if (originNode.getTile() == null) {
                     if (algoNode.getHeuristicVal() > bestChoice.getHeuristicVal()) {
-
-                        //System.out.println("Better node found! It is " + algoNode.getHeuristicVal() + "  PREVIOUS HEURISTIC: " + bestChoice.getHeuristicVal() + " for stock index " + (stockIndex - 1) + "    " + childNode.getCoordinates().getRow() + "  " + childNode.getCoordinates().getColumn());
                         childNode.setHeuristicVal(algoNode.getHeuristicVal());
                         bestChoice = childNode;
                     }
@@ -215,6 +290,7 @@ public class Board implements Cloneable{
                     }
                 }
 
+                // If Alpha-beta is enabled, then, do the algorithm using it
                 if(isGodMode) {
                     if (bestChoice.getHeuristicVal() < betaH) betaH = bestChoice.getHeuristicVal();
 
@@ -232,11 +308,14 @@ public class Board implements Cloneable{
                 else {
                     humanScore -= tempScore;
                 }
-                //System.out.println("This is MINIMIZER " + stockIndex + " and its heuristic is " + childNode.getHeuristicVal());
+
+                // Updates the child node
                 childNode = findNextAvailableTileNode(childNode);
             }
+            // Decrements the stock index
             stockIndex--;
-            //System.out.println("The best choice has heuristic " + bestChoice.getHeuristicVal());
+
+            // Returns the best choice
             return bestChoice;
         }
     }
@@ -326,10 +405,21 @@ public class Board implements Cloneable{
         return true;
     }
 
+    /**
+     * Fills the tile on the board
+     * @param row Holds the row number
+     * @param col Holds the column number
+     * @param tile Holds the tile that needs to be filled
+     */
     public void fillTile(int row, int col, TileInfo tile) {
         board[row][col] = tile;
     }
 
+    /**
+     * Removes the tile from the board
+     * @param row Holds the row number
+     * @param col Holds the column number
+     */
     public void removeTile(int row, int col) {
         board[row][col] = null;
     }

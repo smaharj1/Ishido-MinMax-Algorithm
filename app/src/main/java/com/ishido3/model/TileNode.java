@@ -1,8 +1,8 @@
 /************************************************************
  * Name:  Sujil Maharjan                                    *
- * Project:  Project 2/Ishido Game			               *
+ * Project:  Project 3/Ishido Game			               *
  * Class:  Artificial Intelligence/CMP 331                  *
- * Date:  2/23/2016			                               *
+ * Date:  3/22/2016			                               *
  ************************************************************/
 
 package com.ishido3.model;
@@ -20,24 +20,23 @@ public class TileNode{
     private TableCoordinates coordinates;
 
     // Declares the score until this tile
-    private int playerScore;
-    private int computerScore;
+    // private int playerScore;
+    //private int computerScore;
+
+    // Holds the heursitic value of current Node
     private int heuristicVal;
-    private int turn;
+    //private int turn;
 
     /**
      * Initializes the values of the tile, coordinates, parent tile, and the total score
      * @param tileInfo It consists of the tile information (TileInfo object)
      * @param tableCoordinates It consists of the TableCoordinates object
-     * @param score It consists of the total score until this tile
      */
     public TileNode(TileInfo tileInfo, TableCoordinates tableCoordinates, int heuristic) {
         tile = tileInfo;
         coordinates = tableCoordinates;
-//        playerScore = pScore;
-//        computerScore = cScore;
         heuristicVal = heuristic;
-//        turn = gameTurn;
+
     }
 
     /**
@@ -46,10 +45,9 @@ public class TileNode{
     public TileNode() {
         tile = null;
         coordinates = new TableCoordinates(0,0);
-//        playerScore = 0;
-//        computerScore = 0;
+
         heuristicVal = 0;
-//        turn = 0;
+
     }
 
     /**
@@ -80,6 +78,7 @@ public class TileNode{
      * Returns the total score until this tile
      * @return Returns the total score
      */
+    /*
     public int getPlayerScore() {
         return playerScore;
     }
@@ -88,10 +87,20 @@ public class TileNode{
         return computerScore;
     }
 
+    */
+
+    /**
+     * Sets the heuristic value
+     * @param val Holds the value that needs to be set
+     */
     public void setHeuristicVal(int val) {
         heuristicVal = val;
     }
 
+    /**
+     * Gets the heuristic value
+     * @return Returns the heuristic value
+     */
     public int getHeuristicVal () {
         return heuristicVal;
     }

@@ -1,8 +1,8 @@
 /************************************************************
  * Name:  Sujil Maharjan                                    *
- * Project:  Project 2/Ishido Game			               *
+ * Project:  Project 3/Ishido Game			               *
  * Class:  Artificial Intelligence/CMP 331                  *
- * Date:  2/23/2016			                               *
+ * Date:  3/22/2016			                               *
  ************************************************************/
 package com.ishido3.model;
 

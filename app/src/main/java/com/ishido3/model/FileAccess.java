@@ -1,3 +1,9 @@
+/************************************************************
+ * Name:  Sujil Maharjan                                    *
+ * Project:  Project 3/Ishido Game			               *
+ * Class:  Artificial Intelligence/CMP 331                  *
+ * Date:  3/22/2016			                               *
+ ************************************************************/
 package com.ishido3.model;
 
 import android.content.Context;
@@ -12,10 +18,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 
-/**
- * This class deals with opening and parsing the files. It then parses into appropriate variables for ease.
- * Created by Tsujil on 2/12/2016.
- */
+
 public class FileAccess {
     // Declares the constants for strings to consider while parsing the file
     public static final int FILE = 1;
@@ -109,6 +112,8 @@ public class FileAccess {
             }
             else if (lineSplit[index].contains(HUMAN_SCORE_START)) {
                 index++;
+
+                // This step is very important in order to parse the string into the integers. Otherwise, we get weird errors
                 lineSplit[index] = lineSplit[index].replaceAll("\\D","");
                 human_score =Integer.parseInt(lineSplit[index]);
             }
@@ -130,13 +135,20 @@ public class FileAccess {
 
     }
 
+    /**
+     * Sets the stock array list from the given string locally
+     * @param str Holds the whole stock from the file in string
+     */
     public void setStock(String str) {
         // Splits the string with spacebar and then adds it in the queue as integers
         String[] stockStr = str.split(" ");
 
+        // If the stock is not empty, then clears it first
         if (!stock.isEmpty()) {
             stock.clear();
         }
+
+        // Loops through the stockStr and then stores individual stock to the stock array
         for (int index = 0; index < stockStr.length; index++) {
             // Adds the TileInfo to the arraylist of stock
             System.out.println(""+ stockStr[index]);
@@ -166,27 +178,52 @@ public class FileAccess {
     }
 
     /**
-     * REturns the score
+     * REturns the human score
      * @return Returns the score
      */
     public int getHumanScore() {
         return human_score;
     }
 
+    /**
+     * Returns the computer score
+     * @return Returns the computer Score
+     */
     public int getComputerScore() { return computer_score; }
 
+    /**
+     * Returns who the next player is
+     * @return Returns who the next player is
+     */
     public int getNextPlayer() { return next_player; }
 
+    /**
+     * Converst the tile to its numeric equivalent
+     * @param tile Holds the tile that needs to be converted
+     * @return Returns the integer after conversion
+     */
     private int convertTile (TileInfo tile) {
         return ((tile.getNumericColorVal()+1) *10) + (tile.getNumericSymbolVal()+1);
     }
 
+    /**
+     * Saves the current progress to the external storage
+     * @param board Holds the current Board Model
+     * @param stock Holds the current stock
+     * @param stockIndex Holds the current stock index so that we save only from current tile
+     * @param humanPlayer Holds the current human Player object
+     * @param computerPlayer  Holds the current computer Player object
+     * @param turn Holds whose turn it is
+     * @throws FileNotFoundException
+     */
     public void save(Board board, ArrayList<TileInfo> stock, int stockIndex, Player humanPlayer, Player computerPlayer, int turn) throws FileNotFoundException {
         File file = new File(Environment.getExternalStorageDirectory(),"savedGame.txt");
 
+        // Check if the filename already exists. If yes, then delete it and create it again
         if (file.exists()) file.delete();
         FileOutputStream outStream = new FileOutputStream(file);
 
+        // Writes it into the file
         try {
             outStream.write("Layout:\n".getBytes());
             // Save everything locally first for easiness
