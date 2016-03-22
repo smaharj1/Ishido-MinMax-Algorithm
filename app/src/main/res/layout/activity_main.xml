@@ -55,13 +55,28 @@
         android:width="70dp"
         android:gravity="center_vertical|center_horizontal" />
 
-    <Button
+    <LinearLayout
+        android:orientation="horizontal"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Peek Next"
-        android:id="@+id/button2"
-        android:layout_gravity="center_horizontal"
-        android:onClick="getNext" />
+        android:gravity="center_horizontal"
+        android:layout_gravity="center_horizontal">
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Peek Next"
+            android:id="@+id/button2"
+            android:layout_gravity="center_horizontal"
+            android:onClick="getNext" />
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Hint!"
+            android:id="@+id/button3"
+            android:onClick="hint" />
+    </LinearLayout>
 
     <LinearLayout
         android:orientation="horizontal"

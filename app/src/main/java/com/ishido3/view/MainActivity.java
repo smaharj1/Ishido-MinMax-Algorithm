@@ -40,10 +40,13 @@ public class MainActivity extends AppCompatActivity {
     private Player computerPlayer = new Player();
     private ArrayList<TileInfo> stock = new ArrayList<TileInfo>();
     private int turn = HUMAN;
+    private boolean hintPressed = false;
+    private boolean humanEnabled = false;
 
     private int stockIndex =0;
     private int nextIndex =0;
 
+    private TextView animatedBox = null;
     private Animation anim;
 
     @Override
@@ -73,7 +76,6 @@ public class MainActivity extends AppCompatActivity {
                     stock.add(tempTile);
                 }
             }
-
         }
         else {
             String file = getIntent().getStringExtra(StartPageActivity.MESSAGE_FILENAME);
@@ -139,6 +141,16 @@ public class MainActivity extends AppCompatActivity {
                         // Temporarily stores the values so that we don't have to repeat same thing over and over
                         TileInfo tempTile = stock.get(stockIndex);
 
+                        if (animatedBox != null) {
+                            animatedBox.clearAnimation();
+                        }
+
+                        if (humanEnabled) {
+                            animatedBox.setText("");
+                            animatedBox.setBackgroundColor(DEFAULT_COLOR);
+                            humanEnabled = false;
+                        }
+
                         TextView box = (TextView) v;
                         box.setText(tempTile.getSymbol());
                         box.setBackgroundColor(tempTile.getColor());
@@ -162,6 +174,7 @@ public class MainActivity extends AppCompatActivity {
 
                         // Updates the view of the tile
                         updateTileView();
+
                     } else {
                         Toast.makeText(getApplicationContext(), "Illegal move", Toast.LENGTH_SHORT).show();
                     }
@@ -175,9 +188,27 @@ public class MainActivity extends AppCompatActivity {
         }
 	};
 
+    public void hint(View view) {
+        if (turn == HUMAN) {
+            hintPressed = true;
+            playComputer(view);
+            hintPressed = false;
+        }
+        else {
+            Toast.makeText(getApplicationContext(), "Not your turn yet.", Toast.LENGTH_SHORT).show();
+        }
+    }
 
     // This is for computer's turn. When this button is clicked, then the algorithm runs to bring out the best node for the PC
     public void playComputer(View view) {
+        if (animatedBox != null) {
+            animatedBox.clearAnimation();
+        }
+
+        if(turn == HUMAN && hintPressed == false) {
+            Toast.makeText(getApplicationContext(), "It is your turn, not computer's.", Toast.LENGTH_SHORT).show();
+            return;
+        }
         EditText plyView = (EditText) findViewById(R.id.cutoffVal);
         String tempValue = (plyView.getText().toString());
 
@@ -196,17 +227,29 @@ public class MainActivity extends AppCompatActivity {
 
         // Starts the algorithm
         long startTime = System.currentTimeMillis();
+
+        // Checks if the algorithm should be run as human or computer. If human, then pass the value to board.
+        if (turn == HUMAN) {
+            board.setHumanUsingAlgo(true);
+        }
+        else {
+            board.setHumanUsingAlgo(false);
+        }
+
         TileNode answerNode = board.startAlgorithm(stock, stockIndex, humanPlayer.getScore(), computerPlayer.getScore(), cutOffValue);
+
         long endTime = System.currentTimeMillis();
         Toast.makeText(getApplicationContext(), "" + (endTime - startTime),Toast.LENGTH_SHORT).show();
         System.out.println("" + (endTime-startTime));
 
-        if (answerNode == null) {
+        if (answerNode.getCoordinates() == null) {
             Toast.makeText(getApplicationContext(),"Game over",Toast.LENGTH_SHORT).show();
             return;
         }
-        System.out.println("The answer is " + answerNode.getCoordinates().getRow()+ "   " + answerNode.getCoordinates().getColumn());
-        System.out.println("Heuristic is " + answerNode.getHeuristicVal());
+        else {
+            System.out.println("The answer is " + answerNode.getCoordinates().getRow() + "   " + answerNode.getCoordinates().getColumn());
+            System.out.println("Heuristic is " + answerNode.getHeuristicVal());
+        }
 
         // After the TileNode is got from the algorithm, calculate the score according to the result and place it on the board.
         // For now, it is solely computer for algorithm
@@ -215,18 +258,27 @@ public class MainActivity extends AppCompatActivity {
 
         TextView CPView = (TextView) findViewById(R.id.computerScore);
 
-        CPView.setText(""+computerPlayer.getScore());
+        CPView.setText("" + computerPlayer.getScore());
 
         TextView box = (TextView) findViewInTable(answerNode.getCoordinates());
         box.setText(answerNode.getTile().getSymbol());
         box.setBackgroundColor(answerNode.getTile().getColor());
 
         box.startAnimation(anim);
-        // Now put it on the board
-        board.fillTile(answerNode.getCoordinates().getRow(),answerNode.getCoordinates().getColumn(),answerNode.getTile());
+        animatedBox = box;
 
-        turn = HUMAN;
-        stockIndex++;
+        if (turn != HUMAN) {
+            // Now put it on the board
+            board.fillTile(answerNode.getCoordinates().getRow(), answerNode.getCoordinates().getColumn(), answerNode.getTile());
+            stockIndex++;
+            turn = HUMAN;
+        }
+        else {
+            humanEnabled = true;
+        }
+
+
+
         updateTileView();
     }
 
